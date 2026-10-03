@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام إدارة معرض السيارات - أوتو رسلان</title>
+    <!-- Tailwind CSS للتصميم السريع والجميل -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Cairo', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <!-- شاشة تسجيل الدخول -->
+    <div id="loginSection" class="min-h-screen flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-8 border border-gray-100">
+            <div class="text-center mb-8">
+                <h1 class="text-2xl font-bold text-gray-900">أوتو رسلان للسيارات</h1>
+                <p class="text-sm text-gray-500 mt-2">نظام إدارة الطلبات والموظفين الداخلي</p>
+            </div>
+            <form onsubmit="handleLogin(event)" class="space-y-5">
+                <div>
+                    <label class="block text-sm font-semibold mb-2">الرقم الوظيفي</label>
+                    <input type="text" id="loginUser" required class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-600 focus:outline-none" placeholder="أدخل الرقم الوظيفي">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold mb-2">كلمة المرور</label>
+                    <input type="password" id="loginPass" required class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-600 focus:outline-none" placeholder="••••••••">
+                </div>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition duration-200 shadow-lg shadow-blue-600/20">تسجيل الدخول</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- لوحة تحكم الأدمن -->
+    <div id="adminPanel" class="hidden min-h-screen flex flex-col">
+        <header class="bg-slate-900 text-white shadow-md px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-4 space-x-reverse">
+                <span class="bg-blue-600 text-xs px-3 py-1 rounded-full font-bold">لوحة المدير العام (الأدمن)</span>
+                <h2 class="text-xl font-bold">أوتو رسلان</h2>
+            </div>
+            <button onclick="logout()" class="bg-red-500/20 hover:bg-red-500 text-red-300 hover:text-white px-4 py-2 rounded-lg text-sm transition">تسجيل الخروج</button>
+        </header>
+
+        <main class="flex-1 p-6 max-w-7xl mx-auto w-full space-y-6">
+            <!-- إحصائيات عامة -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200">
+                    <p class="text-sm text-gray-500 font-medium">إجمالي الطلبات</p>
+                    <h3 id="statTotalOrders" class="text-3xl font-bold text-gray-900 mt-2">0</h3>
+                </div>
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200">
+                    <p class="text-sm text-gray-500 font-medium">إجمالي الموظفين</p>
+                    <h3 id="statTotalStaff" class="text-3xl font-bold text-blue-600 mt-2">0</h3>
+                </div>
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200">
+                    <p class="text-sm text-gray-500 font-medium">السيارات الواصلة</p>
+                    <h3 id="statCompleted" class="text-3xl font-bold text-emerald-600 mt-2">0</h3>
+                </div>
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200">
+                    <p class="text-sm text-gray-500 font-medium">إجمالي العمولات المستحقة</p>
+                    <h3 id="statCommissions" class="text-3xl font-bold text-amber-600 mt-2">0 ريال</h3>
+                </div>
+            </div>
+
+            <!-- إدارة الموظفين -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-bold">إدارة الموظفين والعمولات</h3>
+                    <button onclick="openAddStaffModal()" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-blue-700">+ إضافة موظف جديد</button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-right text-sm">
+                        <thead class="bg-gray-50 text-gray-600">
+                            <tr>
+                                <th class="p-3">الرقم الوظيفي</th>
+                                <th class="p-3">اسم الموظف</th>
+                                <th class="p-3">كلمة المرور</th>
+                                <th class="p-3">عمولة السيارة (ريال)</th>
+                                <th class="p-3">العملاء المضافين</th>
+                                <th class="p-3">إجمالي العمولات</th>
+                                <th class="p-3">الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="staffTableBody" class="divide-y divide-gray-100"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- عرض جميع طلبات المعرض -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+                <h3 class="text-lg font-bold mb-4">سجل طلبات السيارات الواردة من كوريا</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-right text-sm">
+                        <thead class="bg-gray-50 text-gray-600">
+                            <tr>
+                                <th class="p-3">رقم الطلب</th>
+                                <th class="p-3">اسم العميل</th>
+                                <th class="p-3">رقم الجوال وتواصل الواتساب</th>
+                                <th class="p-3">موديل السيارة وفئتها</th>
+                                <th class="p-3">الملاحظات</th>
+                                <th class="p-3">الموظف المسؤول</th>
+                                <th class="p-3">الحالة</th>
+                            </tr>
+                        </thead>
+                        <tbody id="allOrdersTableBody" class="divide-y divide-gray-100"></tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- لوحة تحكم الموظف -->
+    <div id="employeePanel" class="hidden min-h-screen flex flex-col">
+        <header class="bg-blue-600 text-white shadow-md px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-4 space-x-reverse">
+                <span class="bg-white/20 text-xs px-3 py-1 rounded-full font-bold">لوحة الموظف</span>
+                <h2 id="empWelcomeTitle" class="text-xl font-bold">مرحباً بك</h2>
+            </div>
+            <button onclick="logout()" class="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg text-sm transition">تسجيل الخروج</button>
+        </header>
+
+        <main class="flex-1 p-6 max-w-6xl mx-auto w-full space-y-6">
+            <!-- إحصائيات الموظف الشخصية -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200">
+                    <p class="text-sm text-gray-500 font-medium">العملاء الذين أضفتهم</p>
+                    <h3 id="empMyClientsCount" class="text-3xl font-bold text-blue-600 mt-2">0</h3>
+                </div>
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200">
+                    <p class="text-sm text-gray-500 font-medium">إجمالي أرباح العمولات المتوقعة</p>
+                    <h3 id="empMyCommissionTotal" class="text-3xl font-bold text-emerald-600 mt-2">0 ريال</h3>
+                </div>
+            </div>
+
+            <!-- نموذج إضافة طلب جديد -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+                <h3 class="text-lg font-bold mb-4">إضافة طلب سيارة جديد</h3>
+                <form onsubmit="addOrder(event)" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">اسم العميل</label>
+                        <input type="text" id="clientName" required class="w-full px-3 py-2 border rounded-xl focus:ring-2 focus:ring-blue-600 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">رقم جوال العميل</label>
+                        <input type="text" id="clientPhone" required class="w-full px-3 py-2 border rounded-xl focus:ring-2 focus:ring-blue-600 focus:outline-none" placeholder="مثال: 9665xxxxxxxx">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">موديل ومواصفات السيارة والفئة (من كوريا)</label>
+                        <input type="text" id="carModel" required class="w-full px-3 py-2 border rounded-xl focus:ring-2 focus:ring-blue-600 focus:outline-none" placeholder="مثال: سوناتا 2023 فل كامل">
+                    </div>
+                    <div class="md:col-span-3">
+                        <label class="block text-sm font-semibold mb-1">ملاحظات الطلب</label>
+                        <textarea id="clientNotes" rows="2" class="w-full px-3 py-2 border rounded-xl focus:ring-2 focus:ring-blue-600 focus:outline-none" placeholder="أي ملاحظات إضافية تخص العميل أو الطلب..."></textarea>
+                    </div>
+                    <div class="md:col-span-3">
+                        <button type="submit" class="bg-blue-600 text-white font-bold px-6 py-2 rounded-xl hover:bg-blue-700 transition">حفظ وإضافة الطلب</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- طلبات الموظف الخاصة -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+                <h3 class="text-lg font-bold mb-4">طلباتي المسجلة</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-right text-sm">
+                        <thead class="bg-gray-50 text-gray-600">
+                            <tr>
+                                <th class="p-3">رقم الطلب</th>
+                                <th class="p-3">اسم العميل</th>
+                                <th class="p-3">رقم الجوال وتواصل الواتساب</th>
+                                <th class="p-3">السيارة والفئة</th>
+                                <th class="p-3">الملاحظات</th>
+                                <th class="p-3">الحالة</th>
+                            </tr>
+                        </thead>
+                        <tbody id="empOrdersTableBody" class="divide-y divide-gray-100"></tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- نافذة إضافة موظف جديد للأدمن -->
+    <div id="staffModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 space-y-4">
+            <h3 class="text-lg font-bold">إضافة موظف جديد للمعرض</h3>
+            <form onsubmit="saveNewStaff(event)" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold mb-1">الرقم الوظيفي</label>
+                    <input type="text" id="newStaffUsername" required class="w-full px-3 py-2 border rounded-xl" placeholder="مثال: 1001">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold mb-1">اسم الموظف الكامل</label>
+                    <input type="text" id="newStaffName" required class="w-full px-3 py-2 border rounded-xl">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold mb-1">كلمة المرور الخاصة به</label>
+                    <input type="password" id="newStaffPassword" required class="w-full px-3 py-2 border rounded-xl">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold mb-1">قيمة العمولة للطلب الواحد (ريال)</label>
+                    <input type="number" id="newStaffCommission" required value="500" class="w-full px-3 py-2 border rounded-xl">
+                </div>
+                <div class="flex justify-end space-x-2 space-x-reverse pt-2">
+                    <button type="button" onclick="closeAddStaffModal()" class="bg-gray-200 px-4 py-2 rounded-xl text-sm">إلغاء</button>
+                    <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-bold">حفظ الموظف</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- كود الجافاسكريبت -->
+    <script>
+        if (!localStorage.getItem('staffList')) {
+            localStorage.setItem('staffList', JSON.stringify([
+                { username: '1001', name: 'موظف تجريبي', password: '123', commissionRate: 500 }
+            ]));
+        }
+        if (!localStorage.getItem('ordersList')) {
+            localStorage.setItem('ordersList', JSON.stringify([]));
+        }
+
+        let currentUser = null;
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const user = document.getElementById('loginUser').value.trim();
+            const pass = document.getElementById('loginPass').value.trim();
+
+            if (user === '1000' && pass === '2283') {
+                currentUser = { role: 'admin', name: 'المدير العام' };
+                document.getElementById('loginSection').classList.add('hidden');
+                document.getElementById('adminPanel').classList.remove('hidden');
+                loadAdminData();
+                return;
+            }
+
+            const staffList = JSON.parse(localStorage.getItem('staffList'));
+            const foundStaff = staffList.find(s => s.username === user && s.password === pass);
+
+            if (foundStaff) {
+                currentUser = { role: 'employee', ...foundStaff };
+                document.getElementById('loginSection').classList.add('hidden');
+                document.getElementById('employeePanel').classList.remove('hidden');
+                document.getElementById('empWelcomeTitle').innerText = `مرحباً بك، ${foundStaff.name} (الرقم الوظيفي: ${foundStaff.username})`;
+                loadEmployeeData();
+            } else {
+                alert('الرقم الوظيفي أو كلمة المرور غير صحيحة!');
+            }
+        }
+
+        function logout() {
+            currentUser = null;
+            document.getElementById('adminPanel').classList.add('hidden');
+            document.getElementById('employeePanel').classList.add('hidden');
+            document.getElementById('loginSection').classList.remove('hidden');
+            document.getElementById('loginUser').value = '';
+            document.getElementById('loginPass').value = '';
+        }
+
+        function loadAdminData() {
+            const staffList = JSON.parse(localStorage.getItem('staffList'));
+            const ordersList = JSON.parse(localStorage.getItem('ordersList'));
+
+            document.getElementById('statTotalOrders').innerText = ordersList.length;
+            document.getElementById('statTotalStaff').innerText = staffList.length;
+            document.getElementById('statCompleted').innerText = ordersList.filter(o => o.status.includes('واصل')).length;
+
+            let totalCommissionsAll = 0;
+
+            let staffHTML = '';
+            staffList.forEach(staff => {
+                const staffOrders = ordersList.filter(o => o.employeeUser === staff.username);
+                const staffCommissions = staffOrders.length * staff.commissionRate;
+                totalCommissionsAll += staffCommissions;
+
+                staffHTML += `
+                    <tr>
+                        <td class="p-3 font-semibold">${staff.username}</td>
+                        <td class="p-3">${staff.name}</td>
+                        <td class="p-3 text-gray-400">••••</td>
+                        <td class="p-3">${staff.commissionRate} ريال</td>
+                        <td class="p-3"><span class="bg-blue-100 text-blue-700 px-2.5 py-1 rounded-full text-xs font-bold">${staffOrders.length} عملاء</span></td>
+                        <td class="p-3 font-bold text-emerald-600">${staffCommissions} ريال</td>
+                        <td class="p-3">
+                            <button onclick="deleteStaff('${staff.username}')" class="text-red-500 hover:text-red-700 text-xs">حذف</button>
+                        </td>
+                    </tr>
+                `;
+            });
+            document.getElementById('staffTableBody').innerHTML = staffHTML;
+            document.getElementById('statCommissions').innerText = totalCommissionsAll + ' ريال';
+
+            let ordersHTML = '';
+            ordersList.forEach(ord => {
+                const staffMember = staffList.find(s => s.username === ord.employeeUser);
+                const staffName = staffMember ? staffMember.name : ord.employeeUser;
+                const notes = ord.clientNotes ? ord.clientNotes : '<span class="text-gray-400">لا توجد ملاحظات</span>';
+                
+                // تنظيف رقم الجوال لرابط الواتساب
+                const cleanPhone = ord.clientPhone.replace(/\D/g, '');
+                const whatsappMsg = encodeURIComponent(`السلام عليكم أستاذ ${ord.clientName}، بخصوص طلب سيارتك (${ord.carModel}) من أوتو رسلان...`);
+                const whatsappLink = `https://wa.me/${cleanPhone}?text=${whatsappMsg}`;
+
+                ordersHTML += `
+                    <tr>
+                        <td class="p-3">#${ord.id}</td>
+                        <td class="p-3 font-semibold">${ord.clientName}</td>
+                        <td class="p-3">
+                            <div class="flex items-center space-x-2 space-x-reverse">
+                                <span>${ord.clientPhone}</span>
+                                <a href="${whatsappLink}" target="_blank" class="bg-emerald-500 hover:bg-emerald-600 text-white px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 transition">
+                                    <span>واتساب</span>
+                                </a>
+                            </div>
+                        </td>
+                        <td class="p-3">${ord.carModel}</td>
+                        <td class="p-3 text-gray-600">${notes}</td>
+                        <td class="p-3">${staffName}</td>
+                        <td class="p-3"><span class="bg-amber-100 text-amber-800 px-2.5 py-1 rounded-full text-xs">${ord.status}</span></td>
+                    </tr>
+                `;
+            });
+            document.getElementById('allOrdersTableBody').innerHTML = ordersHTML;
+        }
+
+        function loadEmployeeData() {
+            const ordersList = JSON.parse(localStorage.getItem('ordersList'));
+            const staffList = JSON.parse(localStorage.getItem('staffList'));
+            const currentStaff = staffList.find(s => s.username === currentUser.username);
+            
+            const myOrders = ordersList.filter(o => o.employeeUser === currentUser.username);
+            const myCommissions = myOrders.length * (currentStaff ? currentStaff.commissionRate : 500);
+
+            document.getElementById('empMyClientsCount').innerText = myOrders.length;
+            document.getElementById('empMyCommissionTotal').innerText = myCommissions + ' ريال';
+
+            let html = '';
+            myOrders.forEach(ord => {
+                const notes = ord.clientNotes ? ord.clientNotes : '<span class="text-gray-400">لا توجد ملاحظات</span>';
+                
+                // تنظيف رقم الجوال لرابط الواتساب
+                const cleanPhone = ord.clientPhone.replace(/\D/g, '');
+                const whatsappMsg = encodeURIComponent(`السلام عليكم أستاذ ${ord.clientName}، بخصوص طلب سيارتك (${ord.carModel}) من أوتو رسلان...`);
+                const whatsappLink = `https://wa.me/${cleanPhone}?text=${whatsappMsg}`;
+
+                html += `
+                    <tr>
+                        <td class="p-3">#${ord.id}</td>
+                        <td class="p-3 font-semibold">${ord.clientName}</td>
+                        <td class="p-3">
+                            <div class="flex items-center space-x-2 space-x-reverse">
+                                <span>${ord.clientPhone}</span>
+                                <a href="${whatsappLink}" target="_blank" class="bg-emerald-500 hover:bg-emerald-600 text-white px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 transition">
+                                    <span>واتساب</span>
+                                </a>
+                            </div>
+                        </td>
+                        <td class="p-3">${ord.carModel}</td>
+                        <td class="p-3 text-gray-600">${notes}</td>
+                        <td class="p-3"><span class="bg-blue-100 text-blue-800 px-2.5 py-1 rounded-full text-xs">${ord.status}</span></td>
+                    </tr>
+                `;
+            });
+            document.getElementById('empOrdersTableBody').innerHTML = html;
+        }
+
+        function addOrder(e) {
+            e.preventDefault();
+            const clientName = document.getElementById('clientName').value;
+            const clientPhone = document.getElementById('clientPhone').value;
+            const carModel = document.getElementById('carModel').value;
+            const clientNotes = document.getElementById('clientNotes').value;
+
+            const ordersList = JSON.parse(localStorage.getItem('ordersList'));
+            const newOrder = {
+                id: Date.now().toString().slice(-4),
+                clientName,
+                clientPhone,
+                carModel,
+                clientNotes,
+                employeeUser: currentUser.username,
+                status: 'تم الطلب (قيد المعالجة)'
+            };
+
+            ordersList.push(newOrder);
+            localStorage.setItem('ordersList', JSON.stringify(ordersList));
+
+            alert('تم إضافة الطلب بنجاح وتوثيقه لحسابك!');
+            document.getElementById('clientName').value = '';
+            document.getElementById('clientPhone').value = '';
+            document.getElementById('carModel').value = '';
+            document.getElementById('clientNotes').value = '';
+            loadEmployeeData();
+        }
+
+        function openAddStaffModal() {
+            document.getElementById('staffModal').classList.remove('hidden');
+        }
+        function closeAddStaffModal() {
+            document.getElementById('staffModal').classList.add('hidden');
+        }
+
+        function saveNewStaff(e) {
+            e.preventDefault();
+            const username = document.getElementById('newStaffUsername').value.trim();
+            const name = document.getElementById('newStaffName').value.trim();
+            const password = document.getElementById('newStaffPassword').value.trim();
+            const commissionRate = Number(document.getElementById('newStaffCommission').value);
+
+            if (username === '1000') {
+                alert('هذا الرقم الوظيفي خاص بالأدمن ولا يمكن استخدامه لموظف!');
+                return;
+            }
+
+            const staffList = JSON.parse(localStorage.getItem('staffList'));
+            if(staffList.some(s => s.username === username)) {
+                alert('الرقم الوظيفي مستخدم مسبقاً لموظف آخر!');
+                return;
+            }
+
+            staffList.push({ username, name, password, commissionRate });
+            localStorage.setItem('staffList', JSON.stringify(staffList));
+
+            closeAddStaffModal();
+            loadAdminData();
+            alert('تم إضافة الموظف بنجاح!');
+        }
+
+        function deleteStaff(username) {
+            if(confirm('هل أنت متأكد من حذف هذا الموظف؟')) {
+                let staffList = JSON.parse(localStorage.getItem('staffList'));
+                staffList = staffList.filter(s => s.username !== username);
+                localStorage.setItem('staffList', JSON.stringify(staffList));
+                loadAdminData();
+            }
+        }
+    </script>
+</body>
+</html>
